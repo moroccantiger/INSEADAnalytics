@@ -1,6 +1,6 @@
 ---
 title: "Exercise Set 2: A $300 Billion Strategy"
-author: "T. Evgeniou"
+author: "Hicham ABER"
 output: html_document
 ---
 
@@ -165,11 +165,75 @@ print(m1,'chart')
 <br>
 
 **Your Answers here:**
+<br>Question 1:
+<br>6 components needed to explain 50% of variance
 <br>
 <br>
+<br>Question 2:
+<br>5 yr T-Notes US (0.93), 10yr T-Notes (0.93), Treasury Bonds (0.86), 2 yr T-note US (0.85)
 <br>
 <br>
+<br>Question 3:
+<br>1: Bonds
+2: Currencies
+3: Large cap EU stock Indices
+4: Small cap American stock Inidices
+5: European interest rates
+6: Oil
+7: Metals
+8: Grains
+9: Precious metals
+10: Asian stock indices
 
+<br>Question 4: a)
+
+```{r echo=TRUE, comment=NA, warning=FALSE, error=FALSE,message=FALSE,results='asis',tidy=TRUE}
+pre_crisis_data = futures_data[as.Date(rownames(futures_data)) > "2002-11-01" & as.Date(rownames(futures_data)) < "2007-10-01", ]
+Variance_Explained_Table_results<-PCA(pre_crisis_data, graph=FALSE)
+Variance_Explained_Table<-cbind(paste("component",1:ncol(pre_crisis_data),sep=" "),Variance_Explained_Table_results$eig)
+Variance_Explained_Table<-as.data.frame(Variance_Explained_Table)
+colnames(Variance_Explained_Table)<-c("Component","Eigenvalue", "Percentage_of_explained_variance", "Cumulative_percentage_of_explained_variance")
+show_data = data.frame(Variance_Explained_Table)
+m1<-gvisTable(show_data,options=list(width=1920, height=min(400,27*(nrow(show_data)+1)),allowHTML=TRUE,page='disable'),formats=list(Eigenvalue="#.##",Percentage_of_explained_variance="#.##",Cumulative_percentage_of_explained_variance="#.##"))
+print(m1,'chart')
+```
+
+```{r echo=TRUE, comment=NA, warning=FALSE, error=FALSE,message=FALSE,results='asis',tidy=TRUE}
+eigenvalues  <- Variance_Explained_Table[,2]
+df           <- cbind(as.data.frame(eigenvalues), c(1:length(eigenvalues)), rep(1, length(eigenvalues)))
+colnames(df) <- c("eigenvalues", "components", "abline")
+Line         <- gvisLineChart(as.data.frame(df), xvar="components", yvar=c("eigenvalues","abline"), options=list(title='Scree plot', legend="right", width=900, height=600, hAxis="{title:'Number of Components', titleTextStyle:{color:'black'}}", vAxes="[{title:'Eigenvalues'}]",  series="[{color:'green',pointSize:3, targetAxisIndex: 0}]"))
+print(Line, 'chart')
+```
+
+<br>Question 4: b)
+
+```{r echo=TRUE, comment=NA, warning=FALSE, error=FALSE,message=FALSE,results='asis',tidy=TRUE}
+crisis_data = futures_data[as.Date(rownames(futures_data)) > "2007-10-01" & as.Date(rownames(futures_data)) < "2009-03-01", ]
+Variance_Explained_Table_results<-PCA(crisis_data, graph=FALSE)
+Variance_Explained_Table<-cbind(paste("component",1:ncol(crisis_data),sep=" "),Variance_Explained_Table_results$eig)
+Variance_Explained_Table<-as.data.frame(Variance_Explained_Table)
+colnames(Variance_Explained_Table)<-c("Component","Eigenvalue", "Percentage_of_explained_variance", "Cumulative_percentage_of_explained_variance")
+show_data = data.frame(Variance_Explained_Table)
+m1<-gvisTable(show_data,options=list(width=1920, height=min(400,27*(nrow(show_data)+1)),allowHTML=TRUE,page='disable'),formats=list(Eigenvalue="#.##",Percentage_of_explained_variance="#.##",Cumulative_percentage_of_explained_variance="#.##"))
+print(m1,'chart')
+```
+
+```{r echo=TRUE, comment=NA, warning=FALSE, error=FALSE,message=FALSE,results='asis',tidy=TRUE}
+eigenvalues  <- Variance_Explained_Table[,2]
+df           <- cbind(as.data.frame(eigenvalues), c(1:length(eigenvalues)), rep(1, length(eigenvalues)))
+colnames(df) <- c("eigenvalues", "components", "abline")
+Line         <- gvisLineChart(as.data.frame(df), xvar="components", yvar=c("eigenvalues","abline"), options=list(title='Scree plot', legend="right", width=900, height=600, hAxis="{title:'Number of Components', titleTextStyle:{color:'black'}}", vAxes="[{title:'Eigenvalues'}]",  series="[{color:'green',pointSize:3, targetAxisIndex: 0}]"))
+print(Line, 'chart')
+```
+
+<br>Question 5:
+In the crisis years smaller number of components is able to explain more variance (4 components for 50% variance vs. 6 components in pre crisis; 10 components for 70% varaiance vs. 16 in pre-crisis).
+This implies that correlations between between the different variables are significantlz higher.
+As a result, we should consider using two different models for different time periods.
+
+<br>
+<br>
 
 <hr>
 
@@ -249,7 +313,35 @@ How does this compare with **existing CTA products** such as [this one from Soci
 <br>
 
 **Your Answers here:**
-<br>
+<br>Question 1:
+<br>The first part of the code clones the futures_data matrix into a signal_used matrix (by *0)
+  signal_used = 0*futures_data 
+
+The second part produces a list of the windows of moving averages you want to use over which you look at the movement of the futures.
+  MAfreq<-seq(10,250,by=20) gives you a list 10,30,50,…..250
+
+Third, 
+(iter in 1:length(MAfreq))
+This sets up a look,  from 1 to the number of windows as shown above, and calls the current number “iter’. This then allows you to look up the window using this index. e.g.  MAfreq[1] give you 10; MAfreq[2] gives you 30 etc..
+
+The signals used matrix is then added to another matrix that is made by looking at the futures_data matrix
+Here you declare a new function in situ - function(r); and passes it to the moving average function (ma) which takes two parameters - a column of numbers; and the window MAfreq[iter]. 
+
+This matrix is added to the signals used and repeated  for every window. 
+
+Since you only have one dollar to invest each day you now need to normalise each row so the absolute magnitudes sum to 
+You apply by rows  apply(signal_used, 1, function(r))
+Where you declare the function in situ - res = r/sum(abs(r))
+
+Finally, shift(signal_used,2)
+This shifts the signal back by 2 days
+
+trading_strategy = apply(strategy_by_future,1,sum)
+This applies the sum function by rows 
+
+
+<br>Question 2:
+<br>Changing the sequence affects the length of period for which MA is calculated. The longer the period the more smooth the graph
 <br>
 <br>
 <br>
